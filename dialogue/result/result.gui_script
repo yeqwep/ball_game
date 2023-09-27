@@ -1,0 +1,92 @@
+local data = require "main.data"
+-- モジュール
+local common = require "tool.common"
+local s_manager = require ("main.score_manager")
+-- セーブ＆ロード
+local save_handler = require "main.save_handler"
+-- --------------------------------------------------
+-- finish
+-- --------------------------------------------------
+local function hide_window()
+	save_handler.savegamefile()
+	msg.post(".", hash("hide"))
+end
+-- --------------------------------------------------
+-- button setup
+-- --------------------------------------------------
+local s_button = require "tool.button.button"
+local regame_button = nil
+-- init
+local function setup_button(self)
+	regame_button =
+		s_button.create(
+		gui.get_node("back_button/box"),
+		function()
+			hide_window()
+			msg.post("game:/common",hash("d_final"),{action = hash("regame")})
+		end
+	)
+end
+-- --------------------------------------------------
+-- 数値セット
+-- --------------------------------------------------
+-- スコア表示更新
+local function set_score(self)
+	-- 新ベストスコアの時
+	local is_best = s_manager.save_best()
+	if is_best then
+		local node = gui.get_node("new")
+		gui.animate(node,"color.x",0.95,gui.EASING_OUTSINE,7,0.4,nil,gui.PLAYBACK_LOOP_PINGPONG)
+		gui.animate(node,"color.y",0.8,gui.EASING_OUTSINE,5,0.3,nil,gui.PLAYBACK_LOOP_PINGPONG)
+		gui.animate(node,"color.z",0.7,gui.EASING_OUTSINE,3,0.1,nil,gui.PLAYBACK_LOOP_PINGPONG)
+		gui.set_enabled(node, true)
+		gui.animate(node, gui.PROP_SCALE, vmath.vector3(1.1), gui.EASING_OUTBOUNCE, 0.8, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+	end
+	-- if data.best_score < data.score then
+	-- 	local node = gui.get_node("new")
+	-- 	gui.set_enabled(node, true)
+	-- 	gui.animate(node, gui.PROP_SCALE, vmath.vector3(1.1), gui.EASING_OUTBOUNCE, 0.8, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+	-- 	-- スコア保存
+	-- 	save_handler.savegamefile()
+	-- end
+	-- 数値セット
+	local text = common.comma_value(data.score)
+	gui.set_text(self.s_p, text)
+	gui.animate(self.s_p,"color.x",0.295,gui.EASING_OUTSINE,3,0.4,nil,gui.PLAYBACK_LOOP_PINGPONG)
+
+	text = common.comma_value(data.best_score)
+	gui.set_text(self.b_p, text)
+	gui.animate(self.b_p,"color.y",0.195,gui.EASING_OUTSINE,3,0.4,nil,gui.PLAYBACK_LOOP_PINGPONG)
+end
+-- --------------------------------------------------
+-- common
+-- --------------------------------------------------
+function init(self)
+	self.box = gui.get_node("box")
+	self.s_p = gui.get_node("s_p")
+	self.b_p = gui.get_node("b_p")
+	setup_button(self)
+	gui.set_render_order(12)
+	-- pos set
+	self.ori_pos = gui.get_position(self.box)
+	self.pos_y = self.ori_pos.y
+	self.pos_y = self.pos_y + 800
+end
+
+function on_input(self, action_id, action)
+	regame_button.on_input(action_id, action)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		set_score(self)
+		gui.set_position(self.box, vmath.vector3(self.ori_pos.x, self.pos_y, 0))
+		gui.set_enabled(self.box, true)
+		gui.animate(self.box, gui.PROP_POSITION, self.ori_pos, gui.EASING_OUTBACK, .8, 0, function()
+			msg.post(".", "acquire_input_focus")
+		end)
+	elseif message_id == hash("hide") then
+		msg.post(".", "release_input_focus")
+		gui.animate(self.box, gui.PROP_POSITION, vmath.vector3(self.ori_pos.x, self.pos_y, 0), gui.EASING_LINEAR, .24, 0)
+	end
+end

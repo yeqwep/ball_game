@@ -1,0 +1,14 @@
+-- ---------------------------------
+-- スクリプトのURL管理
+-- ---------------------------------
+-- スクリプトURL
+local HANDLER_URL = "main:/handler#handler"
+-- -----------------------------------------------
+-- 基本
+-- -----------------------------------------------
+function init(self)
+	print("regame collection")
+	timer.delay(0.1, false, function()
+		msg.post(HANDLER_URL,hash("game"))
+	end)
+end

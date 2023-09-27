@@ -1,0 +1,130 @@
+local data = require "main.data"
+local common = require "tool.common"
+local s_manager = require ("main.score_manager")
+-- セーブ＆ロード
+local save_handler = require "main.save_handler"
+-- --------------------------------------------------
+-- finish
+-- --------------------------------------------------
+local function hide_window()
+	save_handler.savegamefile()
+	save_handler.savesettings()
+	msg.post(".", hash("hide"))
+end
+-- --------------------------------------------------
+-- button setup
+-- --------------------------------------------------
+local s_button = require "tool.button.button"
+local bgm_toggle = nil
+local se_toggle = nil
+local back_button = nil
+local regame_button = nil
+-- init
+local function setup_button(self)
+	bgm_toggle =
+		s_button.create_toggle(
+		gui.get_node("bgm"),
+		self.bgm,
+		function(toggle,flag)
+			self.bgm = flag
+			local v = 0
+			if self.bgm then
+				v = 1
+			end
+			data.bgm = v
+			common.set_gain(data.bgm, nil)
+		end
+	)
+	se_toggle =
+		s_button.create_toggle(
+		gui.get_node("sound"),
+		self.se,
+		function(toggle,flag)
+			self.se = flag
+			local v = 0
+			if self.se then
+				v = 1
+			end
+			data.sound = v
+			common.set_gain(nil, data.sound)
+		end
+	)
+	back_button =
+		s_button.create(
+		gui.get_node("back_button/box"),
+		function()
+			hide_window()
+			msg.post("game:/common",hash("d_final"),{action = hash("back")})
+		end
+	)
+	regame_button =
+		s_button.create(
+		gui.get_node("regame_button/box"),
+		function()
+			hide_window()
+			msg.post("game:/common",hash("d_final"),{action = hash("regame")})
+		end
+	)
+
+end
+-- --------------------------------------------------
+-- トグルセット
+-- --------------------------------------------------
+local function set_toggle(self)
+	if data.bgm > 0 then
+		self.bgm = true
+	else
+		self.bgm = false
+	end
+	if data.sound > 0 then
+		self.se = true
+	else
+		self.se = false
+	end
+end
+-- --------------------------------------------------
+-- ベストスコアセット
+-- --------------------------------------------------
+local function set_best(self)
+	local is_best = s_manager.save_best()
+	text = common.comma_value(data.best_score)
+	gui.set_text(self.score_b, text)
+end
+-- --------------------------------------------------
+-- common
+-- --------------------------------------------------
+function init(self)
+	self.box = gui.get_node("box")
+	self.score_b = gui.get_node("score_b")
+	-- pos set
+	self.ori_pos = gui.get_position(self.box)
+	self.pos_y = self.ori_pos.y
+	self.pos_y = self.pos_y + 800
+
+	set_toggle(self)
+	setup_button(self)
+	gui.set_render_order(12)
+end
+
+function on_input(self, action_id, action)
+	bgm_toggle.on_input(action_id, action, self.bgm)
+	se_toggle.on_input(action_id, action, self.se)
+
+	back_button.on_input(action_id, action)
+	regame_button.on_input(action_id, action)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		set_toggle(self)
+		set_best(self)
+		gui.set_position(self.box, vmath.vector3(self.ori_pos.x, self.pos_y, 0))
+		gui.set_enabled(self.box, true)
+		gui.animate(self.box, gui.PROP_POSITION, self.ori_pos, gui.EASING_OUTBACK, .48, 0, function()
+			msg.post(".", "acquire_input_focus")
+		end)
+	elseif message_id == hash("hide") then
+		msg.post(".", "release_input_focus")
+		gui.animate(self.box, gui.PROP_POSITION, vmath.vector3(self.ori_pos.x, self.pos_y, 0), gui.EASING_LINEAR, .24, 0)
+	end
+end

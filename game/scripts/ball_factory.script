@@ -1,0 +1,17 @@
+-- --------------------------------------------------
+
+-- [ボールの生成動作]
+
+-- --------------------------------------------------
+-- ---------------------------------
+-- 基本
+-- ---------------------------------
+function on_message(self, message_id, message, sender)
+	-- 指定の種類のボールを指定の位置に生成
+	if message_id == hash("generate") then
+		local url = "/ball_f#factory_" .. message.type
+		local pos = message.pos
+		local obj_data = {type = message.type}
+		factory.create(url, pos, nil, obj_data)
+	end
+end

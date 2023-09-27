@@ -1,0 +1,36 @@
+-- --------------------------------------------------
+
+-- [音割れ防止スクリプト]
+
+-- --------------------------------------------------
+local GATE_TIME = 0.3
+local URL = "main:/sound#"
+function init(self)
+	self.sound = 0
+end
+
+function update(self, dt)
+	if self.sound > 0 then
+		self.sound = self.sound - dt
+	end
+	-- Count down the stored timers
+	-- for k,_ in pairs(self.sounds) do
+	-- 	self.sounds[k] = self.sounds[k] - dt
+	-- 	if self.sounds[k] < 0 then
+	-- 		self.sounds[k] = nil
+	-- 	end
+	-- end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("sound") then
+		-- Only play sounds that are not currently in the gating table.
+		if self.sound <= 0.5 then
+			-- Store sound timer in table
+			self.sound = self.sound  + GATE_TIME
+			-- Play the sound
+			local s_url = URL .. message.name
+			sound.play(s_url)
+		end
+	end
+end

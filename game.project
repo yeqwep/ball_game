@@ -1,0 +1,41 @@
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /orthographic/render/orthographic.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 480
+height = 853
+high_dpi = 1
+
+[android]
+input_method = HiddenInputField
+
+[project]
+title = ball_game
+dependencies#0 = https://github.com/britzl/defold-orthographic/archive/master.zip
+
+[html5]
+splash_image = /asset/idle.gif
+scale_mode = fit
+show_fullscreen_button = 0
+show_console_banner = 0
+
+[gui]
+max_count = 128
+max_particlefx_count = 128
+
+[sprite]
+max_count = 256
+
+[physics]
+use_fixed_timestep = 1
+gravity_y = -800.0
+scale = 0.1
+max_collisions = 256
+max_contacts = 512
+ray_cast_limit_2d = 32
+ray_cast_limit_3d = 32
+

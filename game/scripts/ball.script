@@ -1,0 +1,85 @@
+-- --------------------------------------------------
+
+-- [ボールの動作]
+
+-- --------------------------------------------------
+-- スクリプトプロパティ
+go.property("type", 1)			-- ボールの種類
+go.property("active", true)		-- ボールがアクティブか
+
+-- 共通のデータ
+local data = require ("main.data")
+-- モジュール
+local s_manager = require ("main.score_manager")
+-- ---------------------------------
+-- 詳細動作
+-- ---------------------------------
+local function add_score(self)
+	--ボールのタイプより点数取得しスコアに点数を追加する
+	local add_score = data.BALL_SCORE[self.type]
+	-- GUIに反映する
+	-- 次のボールがあるとき新しいボールを発生させる
+	local new_ball = self.type + 1
+	if new_ball <= data.TYPE_NUM then
+		msg.post("/ball_f",hash("generate"),{type = new_ball, pos = self.pos})
+		msg.post("main:/sound#sound_gate", hash("sound"), {name = "sllime1"})
+	else
+		-- 一番でかいのを消したとき特別ボーナス
+		add_score = add_score + 1500
+		-- 演出パーティクル
+		msg.post(data.C_URL,hash("get_bonus"), {pos = self.pos})
+	end
+	s_manager.up_down(add_score)
+end
+
+local function notify_event(self, other_id, group)
+	--  削除された可能性のあるゲームオブジェクトへの投稿時にエラーをキャッチするための pcall
+	pcall(function()
+		-- 他のボールと接触したとき
+		if other_id then
+			local other_url = msg.url(nil, other_id, "ball")
+			local other_type = go.get(other_url, "type")
+			local other_active = go.get(other_url, "active")
+			-- 他のボールが自分と同じ種類の時
+			if other_type == self.type and other_active then
+				self.active = false
+				add_score(self)
+				go.delete(other_id)
+			end
+		end
+	end)
+end
+-- ---------------------------------
+-- 基本
+-- ---------------------------------
+function init(self)
+end
+
+function update(self, dt)
+	self.pos = go.get_position()
+	if self.pos.y < 0 then
+		msg.post("main:/sound#sound_gate", hash("sound"), {name = "rakka"})
+		if data.game_state.game ~= "END" then
+			msg.post(data.C_URL,hash("game_over"))
+		end
+		go.delete()
+	end
+	if not self.active then
+		go.delete()
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if data.game_state.game == "PLAYING" or data.game_state.game == "WAIT" then
+		if message_id == hash("collision_response") then
+			-- ballの当たり判定の時キャンセル
+			if message.group ~= hash("default") or not self.active then
+				return
+			end
+			notify_event(self, message.other_id, message.group)
+		end
+	end
+	-- if message_id == hash("game_over") then
+	-- 	-- 敗北アニメ
+	-- end
+end

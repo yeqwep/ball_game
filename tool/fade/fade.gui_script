@@ -1,0 +1,23 @@
+-- ---------------------------------
+-- フェード操作
+-- message = {
+-- fade_time, フェード時間数値
+-- fade_color フェードの色vmath.vector4
+-- }
+-- ---------------------------------
+local fade_anim = require("tool.fade.fade_anim")
+local main_fade = nil
+
+function init(self)
+	gui.set_render_order(15)
+	main_fade = fade_anim.init()
+end
+function on_message(self, message_id, message, sender)
+	if message_id == hash("fade") then
+		main_fade.fade(message, sender)
+	elseif message_id == hash("fade_in") then
+		main_fade.fade_in(message, sender)
+	elseif message_id == hash("fade_out") then
+		main_fade.fade_out(message, sender)
+	end
+end

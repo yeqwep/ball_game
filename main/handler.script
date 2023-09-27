@@ -1,0 +1,46 @@
+-- --------------------------------------------------
+
+-- [初期動作とコレクション遷移]
+
+-- --------------------------------------------------
+-- モジュール
+local common = require "tool.common"
+local save_handler = require "main.save_handler"
+-- 共通のデータ
+local data = require ("main.data")
+-- ----------------------
+-- 基本
+-- ----------------------
+function init(self)
+	-- セーブデータロード
+	save_handler.loadgamefile()
+	save_handler.loadsettings()
+	-- 音設定
+	common.set_gain(data.bgm, data.sound)
+	-- ランダムシード
+	math.randomseed(os.time())
+	-- 背景色変更
+	msg.post("@render:", "clear_color", {color = common.hex2rgba("#AAD6EC")})
+	msg.post("handler#game", "load")
+	msg.post(".", "acquire_input_focus")
+end
+
+function on_message(self, message_id, message,sender)
+	if message_id == hash("proxy_loaded") then
+		msg.post(sender, "enable")
+	elseif message_id == hash("pause") then
+		msg.post("main:/handler#game", "set_time_step", {factor = 0, mode = 0})
+	elseif message_id == hash("resume") then
+		msg.post("main:/handler#game", "set_time_step", {factor = 1, mode = 1})
+	elseif message_id == hash("regame") then
+		msg.post("main:/fade#fade", hash("fade_out"), {fade_time = 0.4})
+		timer.delay(0.5, false, function()
+			msg.post("handler#game", "unload")
+			msg.post("handler#regame", "load")
+		end)
+	elseif message_id == hash("game") then
+		msg.post("main:/fade#fade", hash("fade_in"), {fade_time = 0.3})
+		msg.post("handler#regame", "unload")
+		msg.post("handler#game", "load")
+	end
+end

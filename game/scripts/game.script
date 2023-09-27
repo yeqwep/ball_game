@@ -1,0 +1,187 @@
+-- -----------------------------------------------
+
+-- [ゲームの主動作、状態管理]
+
+-- -----------------------------------------------
+-- モジュール
+local s_manager = require ("main.score_manager")
+local st_pat = require ('tool.state_pattern')
+-- 共通のデータ
+local data = require ("main.data")
+-- ---------------------------------
+-- URL定数
+-- ---------------------------------
+-- スクリプトURL
+local WINDOWS_URL = "game:/gui#windows"
+local PLAYER_URL = "game:/player#player"
+local HANDLER_URL = "main:/handler#handler"
+-- ---------------------------------
+-- 状態別動作セット
+-- ---------------------------------
+local function new_states(self)
+	self.script_name = "game"				-- 状態一時保存名
+	self.states = {}						-- 状態テーブル
+	-- ゲーム開始 ----------------------------------
+	self.states.GAMEIN = (function()
+		local state = {name = "GAMEIN"}
+		function state.enter(self, sdata)
+			-- 一時停止解除
+			msg.post(HANDLER_URL, hash("resume"))
+			-- BGMをリセット
+			sound.stop("main:/sound_bgm")
+			sound.play("main:/sound_bgm#ame",{speed = 1})
+			-- 一時データ初期化
+			s_manager.reset()
+			msg.post(PLAYER_URL, hash("reset"))
+			-- スコア、ネクストボールgui表示
+			msg.post(WINDOWS_URL, hash("show"))
+			-- 操作可能状態へ遷移
+			st_pat.transition(self, "PLAYING")
+		end
+		return state
+	end)()
+	-- 操作可能 ----------------------------------
+	self.states.PLAYING = (function()
+		local state = {name = "PLAYING"}
+		function state.enter(self, sdata)
+		end
+
+		function state.message(self, message_id, message, sender)
+			if message_id == hash("game_over") then
+				-- 上限に接触したときゲームオーバー画面表示
+				msg.post(WINDOWS_URL, hash("hide"))
+				msg.post(PLAYER_URL, hash("hide"))
+				st_pat.transition(self, "END")
+			elseif message_id == hash("drop") then
+				-- ドロップしたとき待機状態
+				st_pat.transition(self, "WAIT")
+			end
+		end
+		return state
+	end)()
+	-- 待機 ----------------------------------
+	self.states.WAIT =
+		(function()
+		local state = {name = "WAIT"}
+		function state.enter(self, sdata)
+			-- プレイ状態から切り替えたとき
+			if data.pre_state[self.script_name] == "PLAYING" then
+				-- 待機時間セット
+				self.wait_time = 0.5
+			end
+		end
+		function state.update(self, dt)
+			if self.wait_time > 0 then
+				self.wait_time = self.wait_time - dt
+			else
+				-- 待機時間終了後ボールを更新して入力可能状態へ移行
+				msg.post(PLAYER_URL, hash("pull"))
+				st_pat.transition(self, "PLAYING")
+			end
+		end
+		function state.message(self, message_id, message, sender)
+			if message_id == hash("game_over") then
+				-- 上限に接触したときゲームオーバー画面表示
+				msg.post(WINDOWS_URL, hash("hide"))
+				msg.post(PLAYER_URL, hash("hide"))
+				st_pat.transition(self, "END")
+			end
+		end
+		return state
+	end)()
+	-- ゲームオーバー ----------------------------------
+	self.states.END =
+		(function()
+		local state = {name = "END"}
+		function state.enter(self, sdata)
+			-- 結果ダイアログ表示
+			msg.post("main:/main_gui#result",hash("show"))
+
+			sound.stop("main:/sound_bgm")
+			sound.play("main:/sound_bgm#ame",{speed = 0.8})
+		end
+		function state.message(self, message_id, message, sender)
+			-- ダイアログウィンドウより
+			if message_id == hash("d_final") then
+				-- 戻るボタン押したとき
+				if message.action == hash("regame") then
+					msg.post(HANDLER_URL,hash("regame"))
+				end
+			end
+		end
+		return state
+	end)()
+	-- 操作不可状態 ----------------------------------
+	self.states.LOCK =
+		(function()
+		local state = {name = "LOCK"}
+		function state.message(self, message_id, message, sender)
+			if message_id == hash("unlock") then
+				-- 前の状態に戻る
+				st_pat.transition(self, data.pre_state.game)
+			end
+		end
+		return state
+	end)()
+	-- ダイアログ表示状態 ----------------------------------
+	self.states.DIALOGUE =
+	(function()
+		local state = {name = "DIALOGUE"}
+		function state.enter(self, sdata)
+			-- 一時停止
+			msg.post(HANDLER_URL,hash("pause"))
+		end
+		function state.message(self, message_id, message, sender)
+			-- ダイアログウィンドウより
+			if message_id == hash("d_final") then
+				-- ウィンドウリセット
+				msg.post(WINDOWS_URL, hash("show"))
+				-- 戻るボタン押したとき
+				if message.action == hash("back") then
+					print("DIALOGUE final",data.pre_state.game)
+					-- 物理再開
+					msg.post(HANDLER_URL,hash("resume"))
+					-- 状態元に戻す
+					if data.pre_state.game ~= "DIALOGUE" then
+						st_pat.transition(self, data.pre_state.game)
+					else
+						st_pat.transition(self, "GAMEIN")
+					end
+				-- リトライを押したとき
+				elseif message.action == hash("regame") then
+					msg.post(HANDLER_URL,hash("regame"))
+				end
+			end
+		end
+		return state
+	end)()
+	-- 現在の状態
+	self.state = self.states["LOCK"]
+	st_pat.transition(self, "GAMEIN")
+end
+-- -----------------------------------------------
+-- 基本
+-- -----------------------------------------------
+function init(self)
+	new_states(self)
+end
+function update(self, dt)
+	st_pat.update(self, dt)
+end
+function on_message(self, message_id, message, sender)
+	-- 状態別のメッセージ動作
+	st_pat.on_message(self, message_id, message, sender)
+	-- 共通のメッセージ動作
+	if message_id == hash("state_transition") then
+		-- 他のスクリプトから状態を変更するとき
+		-- message state 状態名 string
+		-- message data  オプションデータ table
+		st_pat.transition(self, message.state, message.data)
+	elseif message_id == hash("get_bonus") then
+		-- 演出パーティクル
+		print("Bonus!")
+		sound.play("main:/sound#congratu")
+		go.set_position(message.pos)
+		particlefx.play("#particles")
+	end
+end
