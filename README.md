@@ -1,5 +1,5 @@
 # Ball Game
- これはDefoldというゲームエンジンでボールをくっつけて消すパズルゲームのサンプルプロジェクトです:watermelon::soccer:	:bowling::football:  
+ これはDefoldというゲームエンジンで動くボールをくっつけて消すパズルのサンプルプロジェクトです:watermelon::soccer:	:bowling:  
  改変OK！超簡単！やったね！！:partying_face::partying_face::partying_face:  
 # サンプルゲーム
  ↓ブラウザで動くプロトタイプです:smiling_face_with_three_hearts:  
