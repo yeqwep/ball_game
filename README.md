@@ -11,6 +11,9 @@
  https://defold.com/  
  アカウント不要で使える無料のゲームエンジンです:santa:  
  このサンプルはこのゲームエンジンを使っているので必須です。  
+ Steamでインストール可能  
+https://store.steampowered.com/app/1365760/Defold/  
+  
 :art:<span style="color: red; ">絵を描くソフト</span>:bento:  
  **なんでもいいよ**  
 # とりあえず　ボールの画像　変えるには
@@ -41,7 +44,8 @@
   
 ![画像芭蕉５](https://github.com/yeqwep/ball_game/blob/main/readme_pic/p05.png "p05")  
 ![画像芭蕉６](https://github.com/yeqwep/ball_game/blob/main/readme_pic/p06.png "p06")  
-後は公開するサイトに合わせて加工してね。  
+  
+...後は公開するサイトに合わせて加工してね。  
 （itch.ioの場合はフォルダごと圧縮してアップロードするだけ）
 
 # その他できること
