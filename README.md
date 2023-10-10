@@ -60,7 +60,7 @@ https://store.steampowered.com/app/1365760/Defold/
  :teacher: my programming bible  
  https://github.com/benjames-171/defold-games  
  https://github.com/britzl/publicexamples  
- :angel: The CoooooL collection of functions for Lua 
+ :angel: The CoooooL collection of functions for Lua   
  https://github.com/rxi/lume  
 
 素敵なゲームクリエイトを！
