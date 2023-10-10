@@ -57,10 +57,11 @@ https://store.steampowered.com/app/1365760/Defold/
 など...  
 わりとなんでもできるよ:man_dancing::man_dancing::man_dancing:
 # References
- マイプログラミングバイブル  
+ :teacher: my programming bible  
  https://github.com/benjames-171/defold-games  
  https://github.com/britzl/publicexamples  
-
+ :angel: The CoooooL collection of functions for Lua 
+ https://github.com/rxi/lume  
 
 素敵なゲームクリエイトを！
 Happy Defolding!
